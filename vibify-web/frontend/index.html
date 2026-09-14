@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vibify — Stream, Vibe & Jam</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+                    },
+                    colors: {
+                        vibify: {
+                            base: '#0a0b12',
+                            surface: '#121320',
+                            card: 'rgba(24, 25, 42, 0.75)',
+                            purple: '#8b5cf6',
+                            purpleDark: '#7c3aed',
+                            cyan: '#06b6d4',
+                            pink: '#ec4899',
+                        }
+                    },
+                    boxShadow: {
+                        'glow-purple': '0 0 25px -5px rgba(139, 92, 246, 0.45)',
+                        'glow-cyan': '0 0 25px -5px rgba(6, 182, 212, 0.45)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @keyframes bounceBar {
+            0%, 100% { transform: scaleY(0.35); }
+            50% { transform: scaleY(1); }
+        }
+        .animate-wave-1 { animation: bounceBar 1.2s infinite ease-in-out 0.1s; }
+        .animate-wave-2 { animation: bounceBar 1.2s infinite ease-in-out 0.3s; }
+        .animate-wave-3 { animation: bounceBar 1.2s infinite ease-in-out 0.2s; }
+        .animate-wave-4 { animation: bounceBar 1.2s infinite ease-in-out 0.4s; }
+
+        /* Custom Slider Styling */
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 9999px;
+            height: 4px;
+            cursor: pointer;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ffffff;
+            cursor: pointer;
+            box-shadow: 0 0 8px rgba(0, 0, 0, 0.6);
+            transition: transform 0.15s ease;
+        }
+        input[type="range"]:hover::-webkit-slider-thumb {
+            transform: scale(1.25);
+        }
+    </style>
+</head>
+<body class="bg-vibify-base text-slate-100 font-sans min-h-screen flex flex-col selection:bg-vibify-purple selection:text-white bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-violet-900/20 via-vibify-base to-vibify-base">
+
+    <!-- Navbar -->
+    <header class="sticky top-0 z-40 w-full backdrop-blur-xl bg-vibify-surface/80 border-b border-white/10 px-6 py-3.5 flex items-center justify-between gap-4">
+        <!-- Brand Logo -->
+        <div class="flex items-center gap-3 cursor-pointer select-none" onclick="resetFilters()">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-vibify-purple to-vibify-cyan p-1.5 flex items-end justify-center gap-0.5 shadow-glow-purple">
+                <span class="w-1 h-2/5 bg-white rounded-sm animate-wave-1"></span>
+                <span class="w-1 h-4/5 bg-white rounded-sm animate-wave-2"></span>
+                <span class="w-1 h-3/5 bg-white rounded-sm animate-wave-3"></span>
+                <span class="w-1 h-full bg-white rounded-sm animate-wave-4"></span>
+            </div>
+            <div>
+                <h1 class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-100 to-vibify-purple bg-clip-text text-transparent">Vibify</h1>
+                <span class="text-[10px] font-bold tracking-widest text-vibify-cyan uppercase block -mt-1">Music & Jam</span>
+            </div>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="relative flex-1 max-w-md hidden sm:block">
+            <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" id="searchInput" placeholder="Search tracks, artists, genres..." 
+                class="w-full pl-10 pr-10 py-2 bg-white/5 border border-white/10 rounded-full text-sm placeholder:text-slate-400 focus:outline-none focus:border-vibify-purple focus:ring-2 focus:ring-vibify-purple/30 transition">
+            <button id="clearSearch" class="hidden absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-sm">&times;</button>
+        </div>
+
+        <!-- Header Actions -->
+        <div class="flex items-center gap-3">
+            <!-- Server Status Badge -->
+            <div id="statusBadge" class="hidden md:flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span>localhost:5001</span>
+            </div>
+
+            <button id="btnOpenJam" class="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold bg-white/10 hover:bg-white/15 border border-white/10 transition">
+                <span>🎧</span> Jam Room
+            </button>
+            <button id="btnOpenAddSong" class="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold bg-gradient-to-r from-vibify-purple to-vibify-purpleDark hover:opacity-90 shadow-glow-purple text-white transition">
+                <span>＋</span> Add Song
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Layout Container -->
+    <div class="flex-1 flex flex-col lg:flex-row overflow-hidden pb-24">
+        
+        <!-- Left / Center: Main Catalog -->
+        <main class="flex-1 overflow-y-auto px-6 py-6 space-y-6">
+            
+            <!-- Hero Banner -->
+            <div class="relative overflow-hidden rounded-3xl p-8 bg-gradient-to-r from-vibify-purple/20 via-vibify-card to-vibify-cyan/10 border border-white/10 backdrop-blur-xl shadow-2xl">
+                <div class="relative z-10 max-w-2xl space-y-3">
+                    <span class="inline-flex items-center gap-1.5 text-xs font-extrabold tracking-widest text-vibify-cyan uppercase">
+                        ⚡ Realtime Music & Social Sessions
+                    </span>
+                    <h2 class="text-3xl sm:text-4xl font-black tracking-tight text-white">Stream, Vibe & Queue with Friends.</h2>
+                    <p class="text-sm text-slate-300 leading-relaxed">
+                        Explore your favorite tunes from MongoDB Atlas. Play audio directly in your browser or host a collaborative Jam Session with real-time priority queueing.
+                    </p>
+                    <div class="flex flex-wrap gap-2 pt-2">
+                        <div class="px-3 py-1 rounded-full text-xs bg-black/40 border border-white/5 text-slate-300">
+                            <strong id="statTotalSongs" class="text-white">0</strong> Songs
+                        </div>
+                        <div class="px-3 py-1 rounded-full text-xs bg-black/40 border border-white/5 text-slate-300">
+                            <strong id="statTotalPlays" class="text-white">0</strong> Plays
+                        </div>
+                        <div class="px-3 py-1 rounded-full text-xs bg-black/40 border border-white/5 text-emerald-400 font-medium">
+                            ● Atlas Live
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mood & Genre Filters -->
+            <div class="flex flex-wrap items-center justify-between gap-3 pt-2">
+                <div class="flex flex-wrap items-center gap-2" id="moodFilters">
+                    <button class="chip-filter active px-4 py-1.5 rounded-full text-xs font-semibold bg-vibify-purple text-white shadow-glow-purple transition" data-filter="all">All Songs</button>
+                    <button class="chip-filter px-4 py-1.5 rounded-full text-xs font-semibold bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 transition" data-filter="hype">⚡ Hype</button>
+                    <button class="chip-filter px-4 py-1.5 rounded-full text-xs font-semibold bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 transition" data-filter="chill">🌊 Chill</button>
+                    <button class="chip-filter px-4 py-1.5 rounded-full text-xs font-semibold bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 transition" data-filter="lowkey">✨ Lowkey</button>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <select id="genreFilterSelect" class="bg-white/5 border border-white/10 rounded-full px-4 py-1.5 text-xs font-semibold text-slate-200 focus:outline-none focus:border-vibify-purple cursor-pointer">
+                        <option value="" class="bg-vibify-surface">All Genres</option>
+                        <option value="Pop" class="bg-vibify-surface">Pop</option>
+                        <option value="Afrobeats" class="bg-vibify-surface">Afrobeats</option>
+                        <option value="Bollywood" class="bg-vibify-surface">Bollywood</option>
+                        <option value="Rock" class="bg-vibify-surface">Rock</option>
+                        <option value="R&B" class="bg-vibify-surface">R&B</option>
+                        <option value="Hip-Hop" class="bg-vibify-surface">Hip-Hop</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Catalog Section Header -->
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
+                    <span>Explore Catalog</span>
+                    <span id="catalogCountBadge" class="text-xs font-normal text-slate-400">(0)</span>
+                </h3>
+            </div>
+
+            <!-- Song Grid -->
+            <div id="songGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-5">
+                <div class="col-span-full py-16 flex flex-col items-center justify-center text-slate-400 gap-3">
+                    <div class="w-8 h-8 border-2 border-vibify-purple border-t-transparent rounded-full animate-spin"></div>
+                    <p class="text-sm">Loading songs from Vibify backend...</p>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- Right Sidebar: Jam Room & Playlist & Recent -->
+        <aside class="w-full lg:w-96 bg-vibify-surface/50 border-t lg:border-t-0 lg:border-l border-white/10 flex flex-col backdrop-blur-xl">
+            <!-- Sidebar Nav Tabs -->
+            <div class="flex border-b border-white/10 bg-black/20 text-xs font-bold">
+                <button class="sidebar-tab flex-1 py-3.5 text-center text-vibify-purple border-b-2 border-vibify-purple transition" data-tab="tabJam">
+                    🎧 Jam Room
+                </button>
+                <button class="sidebar-tab flex-1 py-3.5 text-center text-slate-400 border-b-2 border-transparent hover:text-slate-200 transition" data-tab="tabPlaylist">
+                    💖 Playlist (<span id="playlistBadge">0</span>)
+                </button>
+                <button class="sidebar-tab flex-1 py-3.5 text-center text-slate-400 border-b-2 border-transparent hover:text-slate-200 transition" data-tab="tabRecent">
+                    🕒 Recent
+                </button>
+            </div>
+
+            <!-- Tab 1: Jam Room -->
+            <div id="tabJam" class="tab-pane p-5 space-y-4">
+                <div class="flex items-center justify-between">
+                    <h4 class="font-bold text-sm text-white">Live Jam Session</h4>
+                    <span id="jamStatusPill" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/10 text-slate-400">INACTIVE</span>
+                </div>
+                <p class="text-xs text-slate-400 leading-relaxed">
+                    Collaborate on the song queue in real time. The Host gets priority queue jumping.
+                </p>
+
+                <!-- Inactive Lobby Form -->
+                <div id="jamLobbyForm" class="space-y-3 pt-2">
+                    <button id="btnCreateJamSession" class="w-full py-2.5 rounded-xl font-bold text-xs bg-gradient-to-r from-vibify-purple to-vibify-cyan text-white shadow-glow-cyan hover:opacity-95 transition">
+                        🚀 Start New Session (Host #1)
+                    </button>
+                    <div class="flex items-center gap-2 text-[10px] font-bold tracking-widest text-slate-500 uppercase">
+                        <span class="flex-1 h-px bg-white/10"></span>
+                        <span>or join with code</span>
+                        <span class="flex-1 h-px bg-white/10"></span>
+                    </div>
+                    <div class="flex gap-2">
+                        <input type="text" id="joinCodeInput" placeholder="ENTER CODE (E.G. AB12CD)" maxlength="10"
+                            class="flex-1 px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-xs uppercase tracking-widest font-mono focus:outline-none focus:border-vibify-cyan text-white placeholder:text-slate-500">
+                        <button id="btnJoinJamSession" class="px-4 py-2 bg-white/10 hover:bg-white/15 rounded-xl text-xs font-semibold border border-white/10 transition">
+                            Join
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Active Jam Session View -->
+                <div id="jamActiveContainer" class="hidden space-y-4 pt-1">
+                    <div class="p-3.5 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between">
+                        <div>
+                            <span class="text-[10px] font-bold tracking-wider text-slate-400 uppercase block">Session Code</span>
+                            <div class="flex items-center gap-2">
+                                <span id="activeCodeDisplay" class="text-lg font-black tracking-widest text-vibify-cyan font-mono">------</span>
+                                <button id="btnCopyJoinCode" class="text-slate-400 hover:text-white text-xs" title="Copy code">📋</button>
+                            </div>
+                        </div>
+                        <div id="participantRoleBadge" class="text-xs font-bold px-3 py-1 rounded-full bg-vibify-purple/20 text-vibify-purple border border-vibify-purple/30">
+                            Host (#1)
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold text-slate-300">Queue</span>
+                            <button id="btnHostSkipTrack" class="hidden px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30 hover:bg-rose-500/30 transition">
+                                ⏭ Host Skip
+                            </button>
+                        </div>
+                        <div id="jamQueueList" class="space-y-2 max-h-56 overflow-y-auto pr-1">
+                            <p class="text-xs text-slate-500 text-center py-6">Queue is empty. Click "+ Jam" on any song to add!</p>
+                        </div>
+                    </div>
+
+                    <button id="btnLeaveJamSession" class="w-full py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white border border-white/10 hover:bg-white/5 transition">
+                        Leave Session
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tab 2: Playlist -->
+            <div id="tabPlaylist" class="tab-pane hidden p-5 space-y-4">
+                <div class="flex items-center justify-between">
+                    <h4 class="font-bold text-sm text-white">My Playlist</h4>
+                    <button id="btnClearAllPlaylist" class="text-xs text-rose-400 hover:underline">Clear All</button>
+                </div>
+                <div id="playlistItemsList" class="space-y-2 max-h-80 overflow-y-auto pr-1">
+                    <p class="text-xs text-slate-500 text-center py-6">No saved songs yet. Click "➕" on any card to add here!</p>
+                </div>
+            </div>
+
+            <!-- Tab 3: Recent (LRU Cache) -->
+            <div id="tabRecent" class="tab-pane hidden p-5 space-y-4">
+                <div class="flex items-center justify-between">
+                    <h4 class="font-bold text-sm text-white">Recently Played</h4>
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/10 text-slate-400">LRU (5)</span>
+                </div>
+                <div id="recentItemsList" class="space-y-2 max-h-80 overflow-y-auto pr-1">
+                    <p class="text-xs text-slate-500 text-center py-6">No tracks played yet in this session.</p>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Sticky Bottom Player Bar -->
+    <footer class="fixed bottom-0 left-0 right-0 h-20 bg-vibify-surface/90 border-t border-white/10 backdrop-blur-2xl px-6 flex items-center justify-between gap-4 z-50">
+        <!-- Now Playing Details -->
+        <div class="flex items-center gap-3 w-56 sm:w-64">
+            <div id="playerThumb" class="w-12 h-12 rounded-xl bg-gradient-to-tr from-vibify-purple to-vibify-pink flex items-center justify-center text-xl shadow-lg flex-shrink-0">
+                🎵
+            </div>
+            <div class="overflow-hidden">
+                <div id="playerTitle" class="text-xs font-bold text-white truncate">Select a track</div>
+                <div id="playerArtist" class="text-[11px] text-slate-400 truncate">Vibify Catalog</div>
+            </div>
+        </div>
+
+        <!-- Controls & Progress -->
+        <div class="flex-1 max-w-xl flex flex-col items-center gap-1.5">
+            <div class="flex items-center gap-4">
+                <button id="btnPrevTrack" class="text-slate-400 hover:text-white text-sm transition" title="Previous">⏮</button>
+                <button id="btnPlayPause" class="w-9 h-9 rounded-full bg-white text-black flex items-center justify-center text-sm font-bold shadow-lg hover:scale-105 transition" title="Play">
+                    ▶
+                </button>
+                <button id="btnNextTrack" class="text-slate-400 hover:text-white text-sm transition" title="Next">⏭</button>
+                <button id="btnLoopTrack" class="text-slate-400 hover:text-white text-xs transition" title="Loop">🔁</button>
+            </div>
+            <div class="w-full flex items-center gap-2.5">
+                <span id="playerCurrentTime" class="text-[10px] font-mono text-slate-400 w-7 text-right">0:00</span>
+                <input type="range" id="playerProgressBar" min="0" max="100" value="0" step="0.1" class="flex-1 h-1 bg-white/20">
+                <span id="playerTotalTime" class="text-[10px] font-mono text-slate-400 w-7">0:00</span>
+            </div>
+        </div>
+
+        <!-- Extra Controls: Volume & Web Audio Indicator -->
+        <div class="hidden sm:flex items-center justify-end gap-3 w-56">
+            <button id="btnVolumeMute" class="text-slate-400 hover:text-white text-sm">🔊</button>
+            <input type="range" id="playerVolumeBar" min="0" max="100" value="80" class="w-20 h-1">
+            <div id="audioModeIndicator" class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-vibify-cyan/10 border border-vibify-cyan/20 text-[10px] font-bold text-vibify-cyan">
+                <span id="audioModeDot" class="w-1.5 h-1.5 rounded-full bg-vibify-cyan animate-pulse"></span>
+                <span id="audioModeLabel">SYNTH</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Modal: Add Song Form -->
+    <div id="addSongModal" class="hidden fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="w-full max-w-md bg-vibify-surface border border-white/10 rounded-3xl p-6 shadow-2xl space-y-4">
+            <div class="flex items-center justify-between border-b border-white/10 pb-3">
+                <h3 class="text-base font-bold text-white">Add Song to Vibify</h3>
+                <button id="btnCloseModal" class="text-slate-400 hover:text-white text-lg">&times;</button>
+            </div>
+            <form id="addSongForm" class="space-y-3.5 text-xs">
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Title *</label>
+                    <input type="text" id="inputTitle" required placeholder="e.g. Starboy"
+                        class="w-full px-3.5 py-2 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-slate-500 focus:outline-none focus:border-vibify-purple">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-300 mb-1">Artist *</label>
+                        <input type="text" id="inputArtist" required placeholder="e.g. The Weeknd"
+                            class="w-full px-3.5 py-2 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-slate-500 focus:outline-none focus:border-vibify-purple">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-300 mb-1">Album</label>
+                        <input type="text" id="inputAlbum" placeholder="e.g. Starboy"
+                            class="w-full px-3.5 py-2 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-slate-500 focus:outline-none focus:border-vibify-purple">
+                    </div>
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Audio Stream / File URL (Optional)</label>
+                    <input type="url" id="inputAudioUrl" placeholder="e.g. https://.../audio.mp3"
+                        class="w-full px-3.5 py-2 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-slate-500 focus:outline-none focus:border-vibify-purple">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-300 mb-1">Duration (seconds) *</label>
+                        <input type="number" id="inputDuration" min="10" max="1200" required placeholder="e.g. 230"
+                            class="w-full px-3.5 py-2 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-slate-500 focus:outline-none focus:border-vibify-purple">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-300 mb-1">Genre *</label>
+                        <select id="inputGenre" required class="w-full px-3.5 py-2 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-vibify-purple">
+                            <option value="Pop" class="bg-vibify-surface">Pop</option>
+                            <option value="Afrobeats" class="bg-vibify-surface">Afrobeats</option>
+                            <option value="Bollywood" class="bg-vibify-surface">Bollywood</option>
+                            <option value="Rock" class="bg-vibify-surface">Rock</option>
+                            <option value="Hip-Hop" class="bg-vibify-surface">Hip-Hop</option>
+                            <option value="Electronic" class="bg-vibify-surface">Electronic</option>
+                            <option value="R&B" class="bg-vibify-surface">R&B</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1.5">Mood Tags</label>
+                    <div class="flex gap-4">
+                        <label class="inline-flex items-center gap-1.5 text-slate-300 cursor-pointer">
+                            <input type="checkbox" name="moodTags" value="hype" class="accent-vibify-purple"> ⚡ hype
+                        </label>
+                        <label class="inline-flex items-center gap-1.5 text-slate-300 cursor-pointer">
+                            <input type="checkbox" name="moodTags" value="chill" class="accent-vibify-purple"> 🌊 chill
+                        </label>
+                        <label class="inline-flex items-center gap-1.5 text-slate-300 cursor-pointer">
+                            <input type="checkbox" name="moodTags" value="lowkey" class="accent-vibify-purple"> ✨ lowkey
+                        </label>
+                    </div>
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" id="btnCancelModal" class="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-slate-300 transition">Cancel</button>
+                    <button type="submit" class="px-5 py-2 bg-gradient-to-r from-vibify-purple to-vibify-purpleDark text-white font-bold rounded-xl shadow-glow-purple hover:opacity-95 transition">Save Song</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toastBox" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>
